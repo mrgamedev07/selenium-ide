@@ -42,7 +42,10 @@ import { LanguageHooks } from './hook'
 export interface EmitterContext extends Omit<LanguageEmitterOpts, 'hooks'> {
   testLevel?: number
   commandLevel?: number
-  testDeclaration: string
+  suiteCompletion?: string
+  suiteDeclaration?: string
+  testCompletion?: string
+  testDeclaration?: string
   enableOriginTracing: boolean
   enableDescriptionAsComment: boolean
   hooks: LanguageHooks
@@ -83,7 +86,8 @@ export interface EmitCommandContext {
   context: EmitterContext
   emitNewWindowHandling: (
     command: CommandShape,
-    result: ExportFlexCommandShape
+    result: ExportFlexCommandShape,
+    context: EmitterContext
   ) => Promise<ExportFlexCommandShape>
   variableLookup: VariableLookup
 }
@@ -118,7 +122,7 @@ export function baseEmitFactory(
       _value = await emitter.valuePreprocessor(value, variableLookup)
     }
     const result = await emitter(_target, _value, context)
-    return emitNewWindowHandling(command, result)
+    return emitNewWindowHandling(command, result, context)
   }
 }
 
@@ -146,7 +150,7 @@ export async function emitCommand(
       context
     )
     if (command.opensWindow) {
-      return await emitNewWindowHandling(command, result)
+      return await emitNewWindowHandling(command, result, context)
     }
     return result
   }
@@ -350,6 +354,7 @@ async function emitTest(
   const {
     testLevel = 1,
     commandLevel = 2,
+    testCompletion,
     testDeclaration,
     terminatingKeyword,
     commandPrefixPadding,
@@ -410,7 +415,7 @@ async function emitTest(
   )
 
   // prepare result object
-  result.testDeclaration = render(testDeclaration, {
+  result.testDeclaration = render(testDeclaration!, {
     startingLevel: testLevel,
   }) as string
   result.inEachBegin = render(
@@ -438,7 +443,7 @@ async function emitTest(
       startingLevel: commandLevel,
     }
   ) as string
-  result.testEnd = render(terminatingKeyword, {
+  result.testEnd = render(testCompletion || terminatingKeyword, {
     startingLevel: testLevel,
   }) as string
 
@@ -452,12 +457,14 @@ async function emitTestsFromSuite(
   {
     enableOriginTracing,
     enableDescriptionAsComment,
+    generateTestCompletion,
     generateTestDeclaration,
     project,
   }: Pick<
     EmitterContext,
     | 'enableDescriptionAsComment'
     | 'enableOriginTracing'
+    | 'generateTestCompletion'
     | 'generateTestDeclaration'
     | 'project'
   >
@@ -466,9 +473,13 @@ async function emitTestsFromSuite(
   for (const testID of suite.tests) {
     const test = tests.find((test) => test.id === testID) as TestShape
     const testDeclaration = generateTestDeclaration(test.name)
+    const testCompletion = generateTestCompletion
+      ? generateTestCompletion(test.name)
+      : languageOpts.terminatingKeyword
     result[test.name] = await emitTest(test, tests, {
       ...languageOpts,
       testDeclaration,
+      testCompletion,
       enableOriginTracing,
       enableDescriptionAsComment,
       project,
@@ -479,6 +490,7 @@ async function emitTestsFromSuite(
 
 export interface EmittedSuite {
   suiteDeclaration: string
+  suiteCompletion?: string
   headerComment: string
   dependencies: string
   variables: string
@@ -500,6 +512,7 @@ async function emitSuite(
     commandPrefixPadding,
     hooks,
     suiteDeclaration,
+    suiteCompletion,
     suiteLevel,
     suiteName,
     suite,
@@ -512,6 +525,7 @@ async function emitSuite(
     | 'commandPrefixPadding'
     | 'hooks'
     | 'project'
+    | 'suiteCompletion'
     | 'terminatingKeyword'
   > & {
     beforeEachOptions?: any
@@ -595,7 +609,7 @@ async function emitSuite(
     }
   ) as string
   result.tests = body
-  result.suiteEnd = render(terminatingKeyword, {
+  result.suiteEnd = render(suiteCompletion || terminatingKeyword, {
     startingLevel: suiteLevel,
   }) as string
 

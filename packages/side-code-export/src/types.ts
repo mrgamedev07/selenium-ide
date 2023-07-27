@@ -20,7 +20,8 @@ export type LanguageExportExtras = {
   }>
   emitNewWindowHandling: (
     command: CommandShape,
-    emittedCommand: string
+    emittedCommand: string,
+    context: EmitterContext
   ) => Promise<ExportFlexCommandShape>
 }
 
@@ -99,7 +100,9 @@ export interface LanguageEmitterOpts {
   generateFilename: (name: string) => string
   generateMethodDeclaration: GenerateMethodDeclaration
   generateSuiteDeclaration: (name: string) => string
+  generateSuiteCompletion?: (name: string) => string
   generateTestDeclaration: (name: string) => string
+  generateTestCompletion?: (name: string) => string
   hooks: LanguageHooks
   name: string
   terminatingKeyword: string
