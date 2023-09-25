@@ -13,11 +13,13 @@ import { Session } from 'main/types'
 import storage from 'main/store'
 import { join } from 'path'
 import BaseController from '../Base'
+import { isAutomated } from 'main/util'
 
 const playbackWindowName = 'playback-window'
 const playbackCSS = readFileSync(join(__dirname, 'highlight.css'), 'utf-8')
 const playbackWindowOptions = {
   webPreferences: {
+    devTools: !isAutomated,
     nodeIntegration: false,
     nodeIntegrationInSubFrames: true,
     preload: join(__dirname, `playback-window-preload-bundle.js`),
@@ -53,6 +55,7 @@ const windowLoaderFactoryMap: WindowLoaderFactoryMap = Object.fromEntries(
           const win = new BrowserWindow({
             ...windowConfig,
             webPreferences: {
+              devTools: !isAutomated,
               ...(windowConfig?.webPreferences ?? {}),
               preload: hasPreload ? preloadPath : undefined,
             },
@@ -170,6 +173,24 @@ export default class WindowsController extends BaseController {
     window.on('closed', () => {
       if (!name.startsWith(projectEditorWindowName)) delete this.windows[name]
     })
+    return true
+  }
+
+  async openCustom(
+    name: string,
+    filepath: string,
+    opts: BrowserWindowConstructorOptions = {}
+  ) {
+    const window = new BrowserWindow({
+      ...opts,
+      webPreferences: {
+        // This should be the default preload, which just adds the sideAPI to the window
+        preload: join(__dirname, `project-editor-preload-bundle.js`),
+        ...opts?.webPreferences ?? {},
+      },
+    })
+    this.windows[name] = window
+    await window.loadURL(`file://${filepath}`)
     return true
   }
 

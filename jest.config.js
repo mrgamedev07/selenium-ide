@@ -1,5 +1,13 @@
 module.exports = {
-  testURL: 'http://localhost/index.html',
+  globals: {
+    'ts-jest': {
+      tsConfig: 'tsconfig.base.json',
+    },
+  },
+  testEnvironment: 'jsdom',
+  testEnvironmentOptions: {
+    url: 'http://localhost/index.html',
+  },
   moduleNameMapper: {
     '^.+\\.(css|scss)$': 'identity-obj-proxy',
   },

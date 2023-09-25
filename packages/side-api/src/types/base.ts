@@ -1,7 +1,7 @@
 import { ProjectShape } from '@seleniumhq/side-model'
 import { Chrome } from '@seleniumhq/browser-info'
 import { Browser } from '@seleniumhq/get-driver'
-import { StateShape } from './models/state'
+import { StateShape } from '../models/state'
 
 export interface BrowserInfo extends Pick<Chrome.BrowserInfo, 'version'> {
   browser: Browser
@@ -12,7 +12,7 @@ export interface BrowsersInfo {
   selected: BrowserInfo
 }
 
-export { StateShape } from './models/state'
+export { StateShape } from '../models/state'
 
 export type VariadicArgs = any[]
 

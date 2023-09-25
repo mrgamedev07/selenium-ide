@@ -31,7 +31,7 @@ import { AssertionError, VerificationError } from './errors'
 import Variables from './variables'
 import { Fn } from '@seleniumhq/side-commons'
 import { CommandShape } from '@seleniumhq/side-model'
-import { PluginShape } from './types'
+import { PluginRuntimeShape } from './types'
 
 const { By, Condition, until, Key, WebElementCondition } = webdriver
 
@@ -59,7 +59,7 @@ export interface WindowAPI {
 
 export interface WebDriverExecutorConstructorArgs {
   capabilities?: ExpandedCapabilities
-  customCommands?: PluginShape['commands']
+  customCommands?: PluginRuntimeShape['commands']
   disableCodeExportCompat?: boolean
   driver?: WebDriver
   hooks?: WebDriverExecutorHooks
@@ -160,7 +160,7 @@ export default class WebDriverExecutor {
   variables: Variables
   cancellable?: { cancel: () => void }
   capabilities?: ExpandedCapabilities
-  customCommands: Required<PluginShape>['commands']
+  customCommands: Required<PluginRuntimeShape>['commands']
   disableCodeExportCompat: boolean
   // @ts-expect-error
   driver: WebDriver
@@ -768,7 +768,17 @@ export default class WebDriverExecutor {
     const parsedLocator = parseLocator(locator)
     const elements = await this.driver.findElements(parsedLocator)
     if (elements.length !== 0) {
-      await this.driver.wait(until.stalenessOf(elements[0]), parseInt(timeout))
+      const noElementPresentCondition = new Condition(
+        'for element to not be present',
+        async () => {
+          const elements = await this.driver.findElements(parsedLocator)
+          return elements.length === 0
+        }
+      )
+      await this.driver.wait<boolean>(
+        noElementPresentCondition,
+        Number(timeout)
+      )
     }
   }
 
@@ -1599,6 +1609,18 @@ WebDriverExecutor.prototype.doAssertEditable = composePreprocessors(
   WebDriverExecutor.prototype.doAssertEditable
 )
 
+WebDriverExecutor.prototype.doAssertElementPresent = composePreprocessors(
+  interpolateString,
+  null,
+  WebDriverExecutor.prototype.doAssertElementPresent
+)
+
+WebDriverExecutor.prototype.doAssertElementNotPresent = composePreprocessors(
+  interpolateString,
+  null,
+  WebDriverExecutor.prototype.doAssertElementNotPresent
+)
+
 WebDriverExecutor.prototype.doAssertNotEditable = composePreprocessors(
   interpolateString,
   null,
@@ -1612,10 +1634,30 @@ WebDriverExecutor.prototype.doAssertPrompt = composePreprocessors(
   WebDriverExecutor.prototype.doAssertPrompt
 )
 
+WebDriverExecutor.prototype.doAssertSelectedLabel = composePreprocessors(
+  interpolateString,
+  interpolateString,
+  { targetFallback: preprocessArray(interpolateString) },
+  WebDriverExecutor.prototype.doAssertSelectedLabel
+)
+
 WebDriverExecutor.prototype.doAssertText = composePreprocessors(
   interpolateString,
   interpolateString,
   WebDriverExecutor.prototype.doAssertText
+)
+
+WebDriverExecutor.prototype.doAssertTitle = composePreprocessors(
+  interpolateString,
+  null,
+  WebDriverExecutor.prototype.doAssertTitle
+)
+
+WebDriverExecutor.prototype.doAssertValue = composePreprocessors(
+  interpolateString,
+  interpolateString,
+  { targetFallback: preprocessArray(interpolateString) },
+  WebDriverExecutor.prototype.doAssertValue
 )
 
 WebDriverExecutor.prototype.doEcho = composePreprocessors(

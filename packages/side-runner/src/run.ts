@@ -40,12 +40,13 @@ export interface HoistedThings {
 const buildRunners = ({ configuration, logger }: HoistedThings) => {
   const runTest = async (project: Project, test: TestShape) => {
     logger.info(`Running test ${test.name}`)
-    const pluginPaths = correctPluginPaths(project.path, project.plugins)
+    const pluginPaths = correctPluginPaths(project.path, project?.plugins ?? [])
     const plugins = await loadPlugins(pluginPaths)
     const customCommands = getCustomCommands(plugins)
     const driver = new WebDriverExecutor({
-      capabilities:
-        configuration.capabilities as unknown as WebDriverExecutorConstructorArgs['capabilities'],
+      capabilities: JSON.parse(
+        JSON.stringify(configuration.capabilities)
+      ) as unknown as WebDriverExecutorConstructorArgs['capabilities'],
       customCommands,
       hooks: {
         onBeforePlay: async () => {

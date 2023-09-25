@@ -1,6 +1,6 @@
 import { CommandShape, ProjectShape } from '@seleniumhq/side-model'
 import { CommandType } from '@seleniumhq/side-model/src/Commands'
-import { Fn } from '@seleniumhq/side-commons/src/types'
+import { Fn } from '@seleniumhq/side-commons/dist/types'
 import WebDriverExecutor, { WebDriverExecutorHooks } from './webdriver'
 
 export { Capabilities } from 'selenium-webdriver'
@@ -36,28 +36,6 @@ export interface WindowSwitchedHookInput {
   windowHandle: string
 }
 
-export interface NewCommandShape {
-  command: string
-  target: string | [string, string][]
-  value: string | [string, string][]
-  insertBeforeLastCommand: boolean
-  frameLocation: string
-  winHandleId: string
-}
-
-export interface onCommandRecordedDropResult {
-  action: 'drop'
-}
-export interface OnCommandRecordedUpdateResult {
-  action: 'update'
-  command: NewCommandShape
-}
-
-export type OnCommandRecordedResult =
-  | void
-  | onCommandRecordedDropResult
-  | OnCommandRecordedUpdateResult
-
 export type PluginHookInput = {
   logger: Console
   project: ProjectShape
@@ -84,23 +62,8 @@ export interface FormatShape {
  * commands, formats, or hooks.
  */
 
-export interface PluginShape {
+export interface PluginRuntimeShape {
   commands?: Record<string, CustomCommandShape>
   formats?: FormatShape[]
   hooks?: PluginHooks
 }
-
-export interface PluginPreloadOutputShape {
-  hooks: {
-    onCommandRecorded?: (
-      command: NewCommandShape,
-      event: Event | KeyboardEvent | MouseEvent | MutationRecord[] | undefined
-    ) => OnCommandRecordedResult
-  }
-}
-
-export type SendMessage = (...args: any[]) => void
-
-export type PluginPreloadShape = (
-  sendMessage: SendMessage
-) => PluginPreloadOutputShape
